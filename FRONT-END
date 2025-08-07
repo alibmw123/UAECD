@@ -1,0 +1,503 @@
+import React, { useState, useEffect } from 'react';
+import { Clock, MapPin, Phone, MessageCircle, Filter, Search, Star, Calendar, Eye } from 'lucide-react';
+
+// Mock data for demonstration
+const mockOffers = [
+  {
+    id: 1,
+    title: "BMW X5 2024 - Special Ramadan Offer",
+    brand: "BMW",
+    dealership: "BMW Downtown Dubai",
+    emirate: "Dubai",
+    image: "https://images.unsplash.com/photo-1555215695-3004980ad54e?w=800&h=600&fit=crop",
+    endDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+    phone: "971501234567",
+    location: "Sheikh Zayed Road, Dubai",
+    description: "Exclusive offer on BMW X5 2024 model. Get 15% discount plus complimentary insurance.",
+    views: 342,
+    isActive: true
+  },
+  {
+    id: 2,
+    title: "Mercedes C-Class - Limited Time Deal",
+    brand: "Mercedes",
+    dealership: "Mercedes Benz Abu Dhabi",
+    emirate: "Abu Dhabi",
+    image: "https://images.unsplash.com/photo-1563720223185-11003d516935?w=800&h=600&fit=crop",
+    endDate: new Date(Date.now() + 5 * 60 * 60 * 1000), // 5 hours from now
+    phone: "971521234567",
+    location: "Corniche Road, Abu Dhabi",
+    description: "Mercedes C-Class with premium package. Special financing options available.",
+    views: 189,
+    isActive: true
+  },
+  {
+    id: 3,
+    title: "Toyota Prado 2024 - Family Special",
+    brand: "Toyota",
+    dealership: "Al-Futtaim Toyota Sharjah",
+    emirate: "Sharjah",
+    image: "https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?w=800&h=600&fit=crop",
+    endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days from now
+    phone: "971561234567",
+    location: "Al Wahda Street, Sharjah",
+    description: "Perfect family SUV with advanced safety features. Zero down payment available.",
+    views: 156,
+    isActive: true
+  }
+];
+
+const carBrands = ["All Brands", "BMW", "Mercedes", "Toyota", "Audi", "Lexus", "Nissan", "Honda"];
+const emirates = ["All Emirates", "Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah", "Fujairah", "Umm Al Quwain"];
+
+// Countdown Timer Component
+const CountdownTimer = ({ endDate }) => {
+  const [timeLeft, setTimeLeft] = useState({});
+  const [urgency, setUrgency] = useState('normal');
+
+  useEffect(() => {
+    const calculateTimeLeft = () => {
+      const difference = +new Date(endDate) - +new Date();
+      let timeLeft = {};
+      let urgencyLevel = 'normal';
+
+      if (difference > 0) {
+        timeLeft = {
+          days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+          hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+          minutes: Math.floor((difference / 1000 / 60) % 60),
+          seconds: Math.floor((difference / 1000) % 60),
+        };
+
+        // Determine urgency level
+        const totalHours = difference / (1000 * 60 * 60);
+        if (totalHours <= 6) urgencyLevel = 'critical';
+        else if (totalHours <= 24) urgencyLevel = 'warning';
+      }
+
+      setUrgency(urgencyLevel);
+      return timeLeft;
+    };
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    setTimeLeft(calculateTimeLeft());
+    return () => clearInterval(timer);
+  }, [endDate]);
+
+  const urgencyColors = {
+    normal: 'text-green-600 bg-green-50',
+    warning: 'text-orange-600 bg-orange-50',
+    critical: 'text-red-600 bg-red-50'
+  };
+
+  if (Object.keys(timeLeft).length === 0) {
+    return <span className="text-gray-500 text-sm">Expired</span>;
+  }
+
+  return (
+    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${urgencyColors[urgency]}`}>
+      <Clock className="w-3 h-3" />
+      {timeLeft.days > 0 && <span>{timeLeft.days}d </span>}
+      <span>{timeLeft.hours}h {timeLeft.minutes}m</span>
+      {urgency === 'critical' && <span> {timeLeft.seconds}s</span>}
+    </div>
+  );
+};
+
+// Offer Card Component
+const OfferCard = ({ offer, onViewDetails }) => {
+  return (
+    <div className="bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 overflow-hidden group">
+      <div className="relative">
+        <img 
+          src={offer.image} 
+          alt={offer.title}
+          className="w-full h-48 object-cover group-hover:scale-105 transition-transform duration-300"
+        />
+        <div className="absolute top-3 right-3">
+          <CountdownTimer endDate={offer.endDate} />
+        </div>
+        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur-sm rounded-lg px-2 py-1">
+          <span className="text-xs font-medium text-gray-700">{offer.brand}</span>
+        </div>
+      </div>
+      
+      <div className="p-4">
+        <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{offer.title}</h3>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-600 mb-2">
+          <MapPin className="w-4 h-4" />
+          <span>{offer.dealership}</span>
+        </div>
+        
+        <div className="flex items-center gap-2 text-sm text-gray-500 mb-3">
+          <Eye className="w-4 h-4" />
+          <span>{offer.views} views</span>
+          <span>•</span>
+          <span>{offer.emirate}</span>
+        </div>
+
+        <button 
+          onClick={() => onViewDetails(offer)}
+          className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2 px-4 rounded-lg font-medium transition-all duration-200 transform hover:scale-[1.02]"
+        >
+          View Details
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Filter Bar Component
+const FilterBar = ({ selectedBrand, selectedEmirate, onBrandChange, onEmirateChange, onClear }) => {
+  return (
+    <div className="bg-white rounded-lg shadow-sm border p-4 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
+        <div className="flex flex-col sm:flex-row gap-4 flex-1">
+          <div className="min-w-0 flex-1">
+            <select 
+              value={selectedBrand}
+              onChange={(e) => onBrandChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {carBrands.map(brand => (
+                <option key={brand} value={brand}>{brand}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div className="min-w-0 flex-1">
+            <select 
+              value={selectedEmirate}
+              onChange={(e) => onEmirateChange(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {emirates.map(emirate => (
+                <option key={emirate} value={emirate}>{emirate}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+        
+        <button 
+          onClick={onClear}
+          className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium whitespace-nowrap"
+        >
+          Clear Filters
+        </button>
+      </div>
+    </div>
+  );
+};
+
+// Offer Details Modal Component
+const OfferDetailsModal = ({ offer, onClose }) => {
+  if (!offer) return null;
+
+  const handleWhatsApp = () => {
+    const message = encodeURIComponent(`Hi, I'm interested in the ${offer.title}. Can you provide more details?`);
+    window.open(`https://wa.me/${offer.phone}?text=${message}`, '_blank');
+  };
+
+  const handleCall = () => {
+    window.open(`tel:${offer.phone}`, '_self');
+  };
+
+  const handleNavigate = () => {
+    const query = encodeURIComponent(offer.location);
+    window.open(`https://maps.google.com/?q=${query}`, '_blank');
+  };
+
+  return (
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">Offer Details</h2>
+          <button 
+            onClick={onClose}
+            className="text-gray-400 hover:text-gray-600 text-2xl font-light"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="p-6">
+          <img 
+            src={offer.image} 
+            alt={offer.title}
+            className="w-full h-64 object-cover rounded-lg mb-4"
+          />
+          
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">{offer.title}</h3>
+              <div className="flex items-center gap-2 text-gray-600 mb-2">
+                <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-sm font-medium">
+                  {offer.brand}
+                </span>
+                <span>•</span>
+                <span>{offer.emirate}</span>
+              </div>
+            </div>
+            <CountdownTimer endDate={offer.endDate} />
+          </div>
+          
+          <p className="text-gray-700 mb-6 leading-relaxed">{offer.description}</p>
+          
+          <div className="bg-gray-50 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-gray-900 mb-3">Dealership Information</h4>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-gray-700">
+                <MapPin className="w-4 h-4" />
+                <span>{offer.dealership}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <MapPin className="w-4 h-4" />
+                <span>{offer.location}</span>
+              </div>
+              <div className="flex items-center gap-2 text-gray-700">
+                <Phone className="w-4 h-4" />
+                <span>{offer.phone}</span>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row gap-3">
+            <button 
+              onClick={handleCall}
+              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+              Call Now
+            </button>
+            <button 
+              onClick={handleWhatsApp}
+              className="flex-1 bg-[#25D366] hover:bg-[#22c55e] text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <MessageCircle className="w-4 h-4" />
+              WhatsApp
+            </button>
+            <button 
+              onClick={handleNavigate}
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3 px-4 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors"
+            >
+              <MapPin className="w-4 h-4" />
+              Navigate
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Main App Component
+const UAECarPlatform = () => {
+  const [offers, setOffers] = useState(mockOffers);
+  const [filteredOffers, setFilteredOffers] = useState(mockOffers);
+  const [selectedBrand, setSelectedBrand] = useState("All Brands");
+  const [selectedEmirate, setSelectedEmirate] = useState("All Emirates");
+  const [selectedOffer, setSelectedOffer] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Filter offers based on selected criteria
+  useEffect(() => {
+    let filtered = offers.filter(offer => offer.isActive);
+
+    if (selectedBrand !== "All Brands") {
+      filtered = filtered.filter(offer => offer.brand === selectedBrand);
+    }
+
+    if (selectedEmirate !== "All Emirates") {
+      filtered = filtered.filter(offer => offer.emirate === selectedEmirate);
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter(offer => 
+        offer.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        offer.dealership.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredOffers(filtered);
+  }, [offers, selectedBrand, selectedEmirate, searchQuery]);
+
+  const handleClearFilters = () => {
+    setSelectedBrand("All Brands");
+    setSelectedEmirate("All Emirates");
+    setSearchQuery("");
+  };
+
+  const handleViewDetails = (offer) => {
+    setSelectedOffer(offer);
+    // Increment view count (in real app, this would be an API call)
+    setOffers(prev => prev.map(o => 
+      o.id === offer.id ? { ...o, views: o.views + 1 } : o
+    ));
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-yellow-600 bg-clip-text text-transparent">
+                UAE Car Deals
+              </h1>
+            </div>
+            
+            <div className="flex items-center space-x-4">
+              <div className="relative hidden md:block">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input
+                  type="text"
+                  placeholder="Search offers..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-64"
+                />
+              </div>
+              
+              <button className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                Sign In
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="bg-gradient-to-r from-blue-600 via-blue-700 to-yellow-600 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-4">
+              Best Car Deals in UAE
+            </h2>
+            <p className="text-xl text-blue-100 mb-8 max-w-2xl mx-auto">
+              Discover exclusive offers from verified dealerships across all Emirates. 
+              Limited time deals updated daily.
+            </p>
+            
+            {/* Mobile Search */}
+            <div className="relative md:hidden max-w-md mx-auto">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search offers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-white/20 rounded-lg bg-white/10 backdrop-blur-sm text-white placeholder-white/70 focus:ring-2 focus:ring-white/50 focus:border-transparent"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Filters */}
+        <FilterBar
+          selectedBrand={selectedBrand}
+          selectedEmirate={selectedEmirate}
+          onBrandChange={setSelectedBrand}
+          onEmirateChange={setSelectedEmirate}
+          onClear={handleClearFilters}
+        />
+
+        {/* Stats */}
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">
+            {filteredOffers.length} Active Offers
+          </h3>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Calendar className="w-4 h-4" />
+            <span>Updated today</span>
+          </div>
+        </div>
+
+        {/* Offers Grid */}
+        {filteredOffers.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredOffers.map(offer => (
+              <OfferCard
+                key={offer.id}
+                offer={offer}
+                onViewDetails={handleViewDetails}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12">
+            <div className="text-gray-400 mb-4">
+              <Filter className="w-12 h-12 mx-auto" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No offers found</h3>
+            <p className="text-gray-600 mb-4">
+              Try adjusting your filters or search terms
+            </p>
+            <button 
+              onClick={handleClearFilters}
+              className="text-blue-600 hover:text-blue-700 font-medium"
+            >
+              Clear all filters
+            </button>
+          </div>
+        )}
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 mt-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="col-span-1 md:col-span-2">
+              <h3 className="text-xl font-bold mb-4">UAE Car Deals</h3>
+              <p className="text-gray-300 mb-4">
+                Your trusted platform for finding the best car deals across the UAE. 
+                We connect you with verified dealerships offering exclusive promotions.
+              </p>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Quick Links</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-white transition-colors">All Offers</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Brands</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Emirates</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 className="font-semibold mb-4">Support</h4>
+              <ul className="space-y-2 text-gray-300">
+                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Terms</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Privacy</a></li>
+              </ul>
+            </div>
+          </div>
+          
+          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
+            <p>&copy; 2024 UAE Car Deals. Made for the UAE market.</p>
+          </div>
+        </div>
+      </footer>
+
+      {/* Offer Details Modal */}
+      {selectedOffer && (
+        <OfferDetailsModal
+          offer={selectedOffer}
+          onClose={() => setSelectedOffer(null)}
+        />
+      )}
+    </div>
+  );
+};
+
+export default UAECarPlatform;
